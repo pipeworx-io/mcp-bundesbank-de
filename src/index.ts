@@ -802,7 +802,39 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       if (detail) params.set('detail', detail);
       const qs = params.toString();
       const path = `/data/${encodeURIComponent(flowRef)}/${encodeURIComponent(key)}${qs ? `?${qs}` : ''}`;
-      return bbkJson(path);
+      try {
+        return await bbkJson(path);
+      } catch (err) {
+        // The Bundesbank answers BOTH an unknown flowRef and a key that matched
+        // nothing with the same 404 ("…keine auf die Anfrage passenden
+        // Ergebnisse"), and both threw as a Pipeworx defect with "retry the same
+        // tool" (fleet #2496). The dataflow metadata endpoint tells them apart:
+        // 404 there means the flow does not exist.
+        if (!(err instanceof Error) || !/^Bundesbank: 404\b/.test(err.message)) throw err;
+        const flowRes = await pwFetch(`${BASE}/metadata/dataflow/BBK/${encodeURIComponent(flowRef)}`, {
+          headers: { Accept: 'application/vnd.sdmx.structure+xml, */*', 'User-Agent': UA },
+        });
+        if (flowRes.status === 404) {
+          return {
+            error: 'not_found',
+            message: `The Bundesbank has no dataflow "${flowRef}". Call list_dataflows to find the id, then dataflow_structure to build the key.`,
+            flowRef,
+          };
+        }
+        if (!flowRes.ok) throw err;
+        return {
+          flowRef,
+          key,
+          ...(startPeriod ? { startPeriod } : {}),
+          ...(endPeriod ? { endPeriod } : {}),
+          series: [],
+          empty_reason: 'no_match',
+          note:
+            `The Bundesbank has dataflow "${flowRef}" but no observations match key "${key}"` +
+            `${startPeriod || endPeriod ? ` in period ${startPeriod ?? '…'} to ${endPeriod ?? '…'}` : ''}. ` +
+            `Check each dot-separated position against dataflow_structure({flowRef: "${flowRef}"}), or widen the period.`,
+        };
+      }
     }
     default:
       throw new Error(`Unknown tool: ${name}`);

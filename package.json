@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-bundesbank-de",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Deutsche Bundesbank (Germany's central bank) statistics MCP.",
   "type": "module",
   "main": "src/index.ts",
@@ -26,7 +26,7 @@
     "@cloudflare/workers-types": "^4.20260405.1"
   },
   "pipeworx": {
-    "sourceHash": "v1-df77cedd34eff098a4cf8b371a4b62223d7e4f76fd385c5da765e16c9776a6e2",
-    "sourceCommit": "babdd280d475dceddecc9ebf8f2a661712781a81"
+    "sourceHash": "v1-1778ea117e253f4849ad1cb15dbd53647031bff44f7ddccfcb889bf88f0596f0",
+    "sourceCommit": "a00767651388cfd017fdeac82188622721db2051"
   }
 }
